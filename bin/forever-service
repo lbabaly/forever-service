@@ -4,10 +4,11 @@
 var installer = require('../lib/installer');
 var platforms = require('../lib/platforms');
 var path = require('path');
+var shell = require('shelljs');
 
 platforms.get(function(err, platform){
 	console.log('forever-service version '+require('../package.json').version+'\n');
-	if(err || !platform){		
+	if(err || !platform){
 		console.error('This platform is not yet supported by forever-service');
 		console.error('To help us add this platform, please contibute to https://github.com/zapty/forever-service\n');
 		return;
@@ -17,7 +18,7 @@ platforms.get(function(err, platform){
 
 	program
 		.version(require('../package.json').version)
-		
+
 
 	program
 		.command('install [service]')
@@ -33,6 +34,7 @@ platforms.get(function(err, platform){
 		.option('--nologrotate','Do not generate logrotate script\n')
 		.option('--logrotateFrequency [frequency]','Frequency of logrotation\n                                   valid values are daily, weekly, monthly, "size 100k" etc, default daily\n')
 		.option('--logrotateMax [value]','Maximum logrotated files to retain, default 10 (logrotate parameter)\n')
+		.option('--logrotateDateExt', 'Archive old versions of log files adding a daily extension like YYYYMMDD instead of simply adding a number\n')
 		.option('--logrotateCompress', 'Enable compression for logrotate\n')
 		.option('-p --foreverPath [value]','Path for forever cli e.g. /usr/local/bin,\n                                   by default forever cli is searched in system Path variable\n')
 		.option('-u --applyUlimits','Apply increased ulimits in supported environment\n')
@@ -51,7 +53,7 @@ platforms.get(function(err, platform){
 			var ctx = Object.create(platform);
 			ctx.service = service;
 
-			if(options.script) 
+			if(options.script)
 				ctx.script = options.script;
 			else
 				ctx.script = 'app.js';
@@ -60,17 +62,7 @@ platforms.get(function(err, platform){
 			if(options.envVars) ctx.envVars = options.envVars;
 			if(ctx.envVars){
 				//Split at space, but ignore space inside quotes..
-				ctx.envVarsArray = ctx.envVars.match(/(?:[^\s"']+|["'][^"']*["'])+/g);
-				ctx.envVarsNameValueArray=[];
-				for(var evi in ctx.envVarsArray){
-					var ev = ctx.envVarsArray[evi];
-					var evp = ev.split("=");
-					if(evp.length != 2){
-						console.log("Invalid env variable "+ev);
-						process.exit(1);
-					}
-					ctx.envVarsNameValueArray.push(evp);
-				}
+				ctx.envVarsNameValueArray = installer.splitEnvVariables(ctx.envVars);
 			}
 			if(options.scriptOptions) ctx.scriptOptions = options.scriptOptions;
 			if(options.minUptime) ctx.minUptime = options.minUptime;
@@ -81,6 +73,7 @@ platforms.get(function(err, platform){
 			if(options.nologrotate) ctx.nologrotate = true;
 			if(options.logrotateFrequency) ctx.logrotateFrequency = options.logrotateFrequency;
 			if(options.logrotateMax) ctx.logrotateMax = options.logrotateMax;
+			if(options.logrotateDateExt) ctx.logrotateDateExt = 'dateext';
 			if(options.logrotateCompress) ctx.logrotateCompress = 'compress';
 			if(options.applyUlimits) ctx.applyUlimits = true;
             ctx.foreverPath=path.dirname(getCmdPath('forever'));
@@ -150,7 +143,7 @@ platforms.get(function(err, platform){
 				console.error('Service name missing');
 				return 3;
 			}
-			
+
 			console.log('Platform - '+platform.os);
 
 			var ctx = Object.create(platform);
@@ -177,7 +170,7 @@ platforms.get(function(err, platform){
 		console.log('  Command help:\n')
 		console.log('    forever-service install --help');
 		console.log('    forever-service delete --help\n');
-	} 
+	}
 
 });
 

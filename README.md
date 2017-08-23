@@ -16,13 +16,14 @@ Platforms supported
 * Amazon Linux
 * Redhat Linux
 * CentOS
-* Ubuntu (< 15.04)
+* Ubuntu (upstart, sysv fallback for >= 15.04, no systemd support)
 * Debian
 * Raspbian
 * OSMC Linux
 * Fedora 21
 * Oracle Linux
 * Elementary OS
+* BunsenLabs
 * more to come..
 
 Prerequisite
@@ -104,6 +105,8 @@ forever-service version 0.x.x
                                        
     --logrotateMax [value]             Maximum logrotated files to retain, default 10 (logrotate parameter)
                                        
+    --logrotateDateExt                 Archive old versions of log files adding a daily extension like YYYYMMDD instead of simply adding a number
+
     --logrotateCompress                Enable compression for logrotate
 
     -p --foreverPath                   Path for forever cli e.g. /usr/local/bin,
